@@ -1,0 +1,142 @@
+//http://www.cs.iit.edu/~agam/cs512/lect-notes/opencv-intro/index.html
+
+////////////////////////////////////////////////////////////////////////
+//
+// hello-world.cpp
+//
+// This is a simple, introductory OpenCV program. The program reads an
+// image from a file, inverts it, and displays the result. 
+//
+////////////////////////////////////////////////////////////////////////
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <cv.h>
+#include <highgui.h>
+
+#include <time.h>
+
+
+
+int main(int argc, char *argv[])
+{
+  IplImage* img = 0; 
+  IplImage* hand = 0;
+  IplImage* r =0;
+
+  IplImage* imgmono = 0;
+  IplImage* handmono = 0;
+
+  int height,width,step,channels;
+  uchar *data;
+  int i,j,k;
+  float v,val;
+  float *f;
+  uchar *fm, *fc;
+
+
+clock_t t1,t2;
+double dt;
+
+  double tickfreq;
+  int64 tc1, tc2;
+  double ms;
+  tickfreq = cvGetTickFrequency();
+
+  if(argc<2){
+    printf("Usage: main <image-file-name>\n\7");
+    exit(0);
+  }
+
+  // load an image  
+  img=cvLoadImage(argv[1], 1); //1 means color
+  if(!img){
+    printf("Could not load image file: %s\n",argv[1]);
+    exit(0);
+  }
+
+  hand=cvLoadImage(argv[2], 1); //1 means color
+  if(!hand){
+    printf("Could not load image file: %s\n",argv[2]);
+    exit(0);
+  }
+  
+
+  // get the image data
+  height    = img->height;
+  width     = img->width;
+  step      = img->widthStep;
+  channels  = img->nChannels;
+  data      = (uchar *)img->imageData;
+  printf("Processing a %dx%d image with %d channels\n",height,width,channels); 
+
+
+  imgmono =  cvCreateImage( cvSize( width ,height ) , IPL_DEPTH_8U, 1 );
+  handmono =  cvCreateImage( cvSize( hand->width, hand->height ) , IPL_DEPTH_8U, 1 );
+
+  fc = (uchar *)img->imageData;
+  fm= (uchar *)imgmono->imageData;
+  for(i=0;i<imgmono->imageSize;i++)
+  fm[i]=fc[3*i];
+  
+   fc = (uchar *)hand->imageData;
+   fm= (uchar *)handmono->imageData;
+   for(i=0;i<handmono->imageSize;i++)
+   fm[i]=fc[3*i];
+         
+
+  // create a window
+  cvNamedWindow("mainWin", CV_WINDOW_AUTOSIZE); 
+  cvMoveWindow("mainWin", 100, 100);
+
+  r = cvCreateImage( cvSize( width-hand->width+1 ,height-hand->height  +1 ) , IPL_DEPTH_32F, 1 );
+
+/*
+t1 = clock();
+cvMatchTemplate(img, hand, r, CV_TM_SQDIFF_NORMED);
+cvMatchTemplate(img, hand, r, CV_TM_SQDIFF_NORMED);
+cvMatchTemplate(img, hand, r, CV_TM_SQDIFF_NORMED);
+t2 = clock();
+dt = ((double)(t2-t1))/CLOCKS_PER_SEC;
+printf("%f s\n",dt/3);
+*/
+
+tc1 = cvGetTickCount();
+
+//  cvMatchTemplate(img, hand, r, CV_TM_SQDIFF_NORMED);
+
+ cvMatchTemplate(imgmono, handmono, r, CV_TM_SQDIFF_NORMED);
+
+tc2 = cvGetTickCount(); 
+dt = ((double)(tc2-tc1))/tickfreq/1000.;
+printf("%f ms\n",dt);
+  
+   f = (float *)r->imageData;
+  i=0;
+  v = f[i];
+  for(i=0;i<r->imageSize/4;i++)
+  {
+  val = f[i];
+  if (val>v) v = val;
+  }
+  printf("%f\n",val);
+
+       for(i=0;i<r->imageSize/4;i++)
+f[i] /= val;
+                 
+                 
+
+  // invert the image
+  for(i=0;i<height;i++) for(j=0;j<width;j++) for(k=0;k<channels;k++)
+    data[i*step+j*channels+k]=255-data[i*step+j*channels+k];
+
+  // show the image
+  cvShowImage("mainWin",imgmono);
+
+  // wait for a key
+  cvWaitKey(0);
+
+  // release the image
+  cvReleaseImage(&img );
+  return 0;
+}

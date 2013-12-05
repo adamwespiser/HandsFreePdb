@@ -1,0 +1,3 @@
+gcc track-cv.c   -lm  -I/usr/include/opencv -lcv -lcxcore -lhighgui -lcvaux -lml
+
+#gcc hello-cv.c   -lm  -I/usr/include/opencv -lcv -lcxcore -lhighgui
